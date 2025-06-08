@@ -58,12 +58,12 @@ const Page = () => {
 
   const handleSubmit = async (values: any) => {
     try {
-      const response = await post<LoginResponse>('/admin/login', {
+      const response = await post<LoginResponse>('/admin/auth/login', {
         username: values.username,
         password: values.password,
       });
 
-      if (response.code === 0) {
+      if (response.code === 200) {
         message.success('登录成功');
         // 存储token和用户信息
         localStorage.setItem('token', response.data.token);
