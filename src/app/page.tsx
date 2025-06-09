@@ -13,26 +13,9 @@ import {
 import { message, theme } from 'antd';
 import type { CSSProperties } from 'react';
 import { useState, useEffect } from 'react';
-import { post } from '@/utils/request';
+import { AdminAuthApi, AuthUtils } from '@/api/admin/auth';
+import type { AdminLoginRequest } from '@/api/types/auth';
 import { useRouter } from 'next/navigation';
-
-interface LoginResponse {
-  code: number;
-  message: string;
-  data: {
-    userId: number;
-    token: string;
-    tokenExpireTime: number;
-    userInfo: {
-      nickname: string;
-      avatar: string;
-      gender: number;
-      realName: string;
-      email: string;
-    };
-    permissions: string[];
-  };
-}
 
 const Page = () => {
   const { token } = theme.useToken();
@@ -41,15 +24,14 @@ const Page = () => {
   // 检查是否自动登录
   useEffect(() => {
     const checkAutoLogin = async () => {
-      const savedToken = localStorage.getItem('token');
-      const autoLogin = localStorage.getItem('autoLogin') === 'true';
-      
-      if (savedToken && autoLogin) {
-      
-            // token 有效，直接跳转到首页
-            router.push('/dashboard');
+      // 使用新的AuthUtils检查登录状态
+      if (AuthUtils.isLoggedIn()) {
+        const autoLogin = localStorage.getItem('autoLogin') === 'true';
         
-        
+        if (autoLogin) {
+          // token 有效，直接跳转到首页
+          router.push('/dashboard');
+        }
       }
     };
 
@@ -58,17 +40,21 @@ const Page = () => {
 
   const handleSubmit = async (values: any) => {
     try {
-      const response = await post<LoginResponse>('/admin/auth/login', {
+      // 构造登录请求参数
+      const loginRequest: AdminLoginRequest = {
         username: values.username,
         password: values.password,
-      });
+        rememberMe: values.autoLogin || false
+      };
 
+      // 使用新的AdminAuthApi进行登录
+      const response = await AdminAuthApi.login(loginRequest);
+      console.log(response);
       if (response.code === 200) {
         message.success('登录成功');
-        // 存储token和用户信息
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('userInfo', JSON.stringify(response.data.userInfo));
-        localStorage.setItem('permissions', JSON.stringify(response.data.permissions));
+        
+        // 使用AuthUtils保存登录信息
+        AuthUtils.saveLoginInfo(response.data);
         
         // 如果选择了自动登录，保存设置
         if (values.autoLogin) {

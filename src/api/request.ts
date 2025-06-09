@@ -1,4 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import { getApiUrl } from '@/utils/env';
 
 // 请求配置接口
 export interface RequestConfig extends AxiosRequestConfig {
@@ -8,7 +9,7 @@ export interface RequestConfig extends AxiosRequestConfig {
 
 // 创建axios实例
 const request: AxiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_BASE_URL || '/api',
+  baseURL: getApiUrl() + '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',

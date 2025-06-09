@@ -66,15 +66,12 @@ export function detectEnvironment(): Environment {
 function validateClientConfig(): void {
   const requiredVars = [
     'NEXT_PUBLIC_API_URL',
-    'NEXT_PUBLIC_APP_NAME',
-    'NEXT_PUBLIC_VERSION'
   ];
   
   const missingVars = requiredVars.filter(varName => !process.env[varName]);
   
   if (missingVars.length > 0) {
-    console.error('❌ 缺少必需的环境变量:', missingVars.join(', '));
-    console.error('请检查 .env 文件配置');
+    console.warn('⚠️ 未设置环境变量，将使用默认值:', missingVars.join(', '));
   }
 }
 
