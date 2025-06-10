@@ -7,6 +7,9 @@ export * from './users';
 // 导出管理员管理API  
 export * from './administrators';
 
+// 导出角色管理API
+export * from './roles';
+
 // 导出职位管理API
 export * from './jobs';
 

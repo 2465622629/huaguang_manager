@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { ProTable, type ProColumns, type ActionType } from '@ant-design/pro-components';
 import { Button, Space, message } from 'antd';
 import { PlusOutlined, DeleteOutlined, ExportOutlined } from '@ant-design/icons';
@@ -75,7 +75,7 @@ function ListPageTemplate<T extends Record<string, any>>({
   searchConfig = {},
 }: ListPageTemplateProps<T>) {
   const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
-  const [actionRef, setActionRef] = useState<ActionType>();
+  const actionRef = useRef<ActionType>();
 
   // 处理批量删除
   const handleBatchDelete = async () => {
@@ -88,7 +88,7 @@ function ListPageTemplate<T extends Record<string, any>>({
       await onBatchDelete?.(selectedRowKeys);
       message.success('删除成功');
       setSelectedRowKeys([]);
-      actionRef?.reload();
+      actionRef.current?.reload();
     } catch (error) {
       message.error('删除失败');
     }
@@ -178,7 +178,7 @@ function ListPageTemplate<T extends Record<string, any>>({
   return (
     <ProTable<T>
       headerTitle={title}
-      actionRef={setActionRef}
+      actionRef={actionRef}
       columns={columns}
       request={request}
       rowKey={rowKey}
