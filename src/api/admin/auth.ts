@@ -104,6 +104,11 @@ export class AuthUtils {
    * 保存登录信息
    */
   static saveLoginInfo(loginResponse: AdminLoginResponse): void {
+    // 检查是否在客户端环境
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     localStorage.setItem(this.ACCESS_TOKEN_KEY, loginResponse.accessToken);
     localStorage.setItem(this.REFRESH_TOKEN_KEY, loginResponse.refreshToken);
     localStorage.setItem(this.ADMIN_INFO_KEY, JSON.stringify(loginResponse.adminInfo));
@@ -113,6 +118,11 @@ export class AuthUtils {
    * 获取访问令牌
    */
   static getAccessToken(): string | null {
+    // 检查是否在客户端环境
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    
     return localStorage.getItem(this.ACCESS_TOKEN_KEY);
   }
 
@@ -120,6 +130,11 @@ export class AuthUtils {
    * 获取刷新令牌
    */
   static getRefreshToken(): string | null {
+    // 检查是否在客户端环境
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    
     return localStorage.getItem(this.REFRESH_TOKEN_KEY);
   }
 
@@ -127,6 +142,11 @@ export class AuthUtils {
    * 获取管理员信息
    */
   static getAdminInfo(): AdminInfo | null {
+    // 检查是否在客户端环境
+    if (typeof window === 'undefined') {
+      return null;
+    }
+    
     const adminInfoStr = localStorage.getItem(this.ADMIN_INFO_KEY);
     if (adminInfoStr) {
       try {
@@ -143,6 +163,11 @@ export class AuthUtils {
    * 清除登录信息
    */
   static clearLoginInfo(): void {
+    // 检查是否在客户端环境
+    if (typeof window === 'undefined') {
+      return;
+    }
+    
     localStorage.removeItem(this.ACCESS_TOKEN_KEY);
     localStorage.removeItem(this.REFRESH_TOKEN_KEY);
     localStorage.removeItem(this.ADMIN_INFO_KEY);
