@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useRef, useState } from 'react';
-import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ExperimentOutlined } from '@ant-design/icons';
+import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, ExperimentOutlined, QuestionCircleOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
 import { ProTable, ModalForm, ProForm, ProFormText, ProFormSelect, ProFormTextArea, ProFormDigit } from '@ant-design/pro-components';
-import { Button, message, Popconfirm, Space, Tag, Modal, Typography, Statistic, Row, Col } from 'antd';
+import { Button, message, Popconfirm, Space, Tag, Modal, Typography, Statistic, Row, Col, List, Card } from 'antd';
 import { ContentApi } from '@/api/admin/content';
 import type { PsychTestResponse } from '@/api/types/content';
 import { ContentStatus } from '@/api/types/content';
 
-const { Paragraph } = Typography;
+const { Paragraph, Text } = Typography;
 
 // 心理测试数据类型 (映射API数据)
 interface PsychTestItem {
@@ -108,7 +108,7 @@ const mockQuestions: TestQuestion[] = [
 ];
 
 export default function PsychTestsPage() {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -167,24 +167,24 @@ export default function PsychTestsPage() {
       key: 'difficulty',
       width: 80,
       render: (_, record) => {
-        const difficultyMap = {
+        const difficultyMap: Record<string, { color: string; text: string }> = {
           easy: { color: 'green', text: '简单' },
-          medium: { color: 'orange', text: '中等' },
+          intermediate: { color: 'orange', text: '中等' },
           hard: { color: 'red', text: '困难' },
         };
-        const difficulty = difficultyMap[record.difficulty];
+        const difficulty = difficultyMap[record.difficulty] || { color: 'default', text: '未知' };
         return <Tag color={difficulty.color}>{difficulty.text}</Tag>;
       },
       valueEnum: {
         easy: { text: '简单' },
-        medium: { text: '中等' },
+        intermediate: { text: '中等' },
         hard: { text: '困难' },
       },
     },
     {
       title: '完成人数',
-      dataIndex: 'completedCount',
-      key: 'completedCount',
+      dataIndex: 'completionCount',
+      key: 'completionCount',
       width: 100,
       search: false,
       render: (text) => <Tag color="green">{text}</Tag>,
@@ -196,7 +196,7 @@ export default function PsychTestsPage() {
       key: 'averageScore',
       width: 90,
       search: false,
-      render: (text) => <span style={{ color: '#fa8c16' }}>{text.toFixed(1)}</span>,
+      render: (text) => <span style={{ color: '#fa8c16' }}>{typeof text === 'number' ? text.toFixed(1) : '0.0'}</span>,
       sorter: true,
     },
     {
@@ -211,19 +211,19 @@ export default function PsychTestsPage() {
       key: 'status',
       width: 100,
       render: (_, record) => {
-        const statusMap = {
+        const statusMap: Record<string, { color: string; text: string }> = {
           draft: { color: 'default', text: '草稿' },
           published: { color: 'green', text: '已发布' },
-          offline: { color: 'red', text: '已下线' },
+          archived: { color: 'red', text: '已归档' },
         };
-        const status = statusMap[record.status];
+        const status = statusMap[record.status] || { color: 'default', text: '未知' };
         return <Tag color={status.color}>{status.text}</Tag>;
       },
-      valueEnum: {
-        draft: { text: '草稿', status: 'Default' },
-        published: { text: '已发布', status: 'Success' },
-        offline: { text: '已下线', status: 'Error' },
-      },
+              valueEnum: {
+          draft: { text: '草稿', status: 'Default' },
+          published: { text: '已发布', status: 'Success' },
+          archived: { text: '已归档', status: 'Error' },
+        },
     },
     {
       title: '创建时间',
@@ -600,7 +600,7 @@ export default function PsychTestsPage() {
                 <span>时长：{currentRow.duration}分钟</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <span>完成人数：{currentRow.completedCount}</span>
+                <span>完成人数：{currentRow.completionCount}</span>
                 <span>平均分：{currentRow.averageScore}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -635,7 +635,7 @@ export default function PsychTestsPage() {
       >
         <List
           dataSource={mockQuestions}
-          renderItem={(item, index) => (
+          renderItem={(item: TestQuestion, index: number) => (
             <List.Item
               actions={[
                 <Button key="edit" type="link">编辑</Button>,
@@ -656,7 +656,7 @@ export default function PsychTestsPage() {
                   <div>
                     <p style={{ marginBottom: 8 }}>{item.question}</p>
                     <div>
-                      {item.options.map((option, idx) => (
+                      {item.options.map((option: { label: string; value: string; score: number }, idx: number) => (
                         <Tag key={idx} style={{ marginBottom: 4 }}>
                           {option.label} (分值: {option.score})
                         </Tag>
