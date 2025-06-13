@@ -14,34 +14,30 @@ export interface OrderListQuery extends BasePageQuery {
 // 咨询订单响应数据
 export interface ConsultationOrderResponse {
   id: number;
-  orderNumber: string;
-  status: OrderStatus;
-  serviceType: ServiceType;
-  amount: number;
-  consultantType: ConsultantType;
-  clientInfo: {
-    id: number;
-    username: string;
-    realName?: string;
-    avatar?: string;
-  };
-  consultantInfo: {
-    id: number;
-    username: string;
-    realName: string;
-    avatar?: string;
-    title: string;
-    rating: number;
-  };
-  description: string;
-  scheduledAt?: string;
+  orderNo: string;
+  clientId: number;
+  clientName: string;
+  clientPhone: string;
+  consultantId: number;
+  consultantName: string;
+  consultantPhone: string;
+  consultantType: string;
+  consultantTypeDescription: string;
+  serviceType: string;
+  serviceTypeDescription: string;
+  durationMinutes: number;
+  durationFormatted: string;
+  fee: number;
+  status: string;
+  statusDescription: string;
+  question: string;
+  paymentMethod: string;
+  paidAt?: string;
+  startedAt?: string;
   completedAt?: string;
-  refundReason?: string;
-  paymentInfo: {
-    method: string;
-    paidAt?: string;
-    refundedAt?: string;
-  };
+  actualDurationSeconds: number;
+  actualDurationFormatted: string;
+  sessionStatus: string;
   createdAt: string;
   updatedAt: string;
 }

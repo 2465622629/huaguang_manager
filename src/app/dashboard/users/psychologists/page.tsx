@@ -2,26 +2,37 @@
 
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Tag, Avatar, Badge, Rate, Space, Tooltip } from 'antd';
-import { EyeOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined, CopyOutlined } from '@ant-design/icons';
+import { Button, Tag, Badge } from 'antd';
+import { EyeOutlined, EditOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import ListPageTemplate from '@/components/templates/ListPageTemplate';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
 import { UserResponse } from '@/api/types/users';
 
-// 心理师数据类型 - 基于UserResponse
-interface PsychologistItem extends UserResponse {
-  licenseNumber?: string;
-  institution?: string;
-  qualifications?: string[];
-  specializations?: string[];
-  experience?: number;
-  rating?: number;
-  consultationCount?: number;
-  verified?: boolean;
-  verificationStatus?: 'pending' | 'approved' | 'rejected';
-  verifiedAt?: string;
+// 心理师数据类型 - 精确匹配后端响应数据结构
+interface PsychologistItem {
+  id: number;
+  userId: number;
+  username: string;
+  realName: string;
+  email: string;
+  phone: string;
+  status: string;
+  licenseNumber: string;
+  specialties: string[];
+  experienceYears: number;
+  consultationCount: number;
+  textFee: number;
+  voiceFee: number;
+  videoFee: number;
+  isOnline: boolean;
+  acceptConsultation: boolean;
+  introduction: string;
+  certificates: string[];
+  slogan: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 const PsychologistManagePage: React.FC = () => {
@@ -34,27 +45,20 @@ const PsychologistManagePage: React.FC = () => {
       search: false,
     },
     {
-      title: '头像',
-      dataIndex: 'avatarUrl',
+      title: '用户ID',
+      dataIndex: 'userId',
       width: 80,
       search: false,
-      render: (_, record) => (
-        <Avatar 
-          size={40}
-          src={record.avatarUrl} 
-          icon={<UserOutlined />}
-        />
-      ),
-    },
-    {
-      title: '姓名',
-      dataIndex: 'realName',
-      width: 100,
     },
     {
       title: '用户名',
       dataIndex: 'username',
       width: 120,
+    },
+    {
+      title: '姓名',
+      dataIndex: 'realName',
+      width: 100,
     },
     {
       title: '邮箱',
@@ -75,36 +79,15 @@ const PsychologistManagePage: React.FC = () => {
       copyable: true,
     },
     {
-      title: '所属机构',
-      dataIndex: 'institution',
-      width: 180,
-      ellipsis: true,
-    },
-    {
-      title: '专业资质',
-      dataIndex: 'qualifications',
+      title: '专业领域',
+      dataIndex: 'specialties',
       width: 200,
       search: false,
       render: (_, record) => (
         <>
-          {record.qualifications?.map((qualification, index) => (
-            <Tag key={index} color="green" style={{ marginBottom: 4 }}>
-              {qualification}
-            </Tag>
-          ))}
-        </>
-      ),
-    },
-    {
-      title: '专长领域',
-      dataIndex: 'specializations',
-      width: 200,
-      search: false,
-      render: (_, record) => (
-        <>
-          {record.specializations?.map((specialization, index) => (
+          {record.specialties?.map((specialty, index) => (
             <Tag key={index} color="purple" style={{ marginBottom: 4 }}>
-              {specialization}
+              {specialty}
             </Tag>
           ))}
         </>
@@ -112,19 +95,10 @@ const PsychologistManagePage: React.FC = () => {
     },
     {
       title: '从业年限',
-      dataIndex: 'experience',
+      dataIndex: 'experienceYears',
       width: 100,
       search: false,
-      render: (experience) => experience ? `${experience}年` : '-',
-    },
-    {
-      title: '评分',
-      dataIndex: 'rating',
-      width: 120,
-      search: false,
-      render: (rating) => rating ? (
-        <Rate disabled defaultValue={Number(rating)} allowHalf />
-      ) : '-',
+      render: (experienceYears) => experienceYears ? `${experienceYears}年` : '-',
     },
     {
       title: '咨询次数',
@@ -133,14 +107,49 @@ const PsychologistManagePage: React.FC = () => {
       search: false,
     },
     {
-      title: '认证状态',
-      dataIndex: 'verificationStatus',
+      title: '文字咨询费',
+      dataIndex: 'textFee',
       width: 120,
-      valueEnum: {
-        pending: { text: '待审核', status: 'Processing' },
-        approved: { text: '已通过', status: 'Success' },
-        rejected: { text: '已拒绝', status: 'Error' },
-      },
+      search: false,
+      render: (textFee) => textFee ? `￥${textFee}/次` : '-',
+    },
+    {
+      title: '语音咨询费',
+      dataIndex: 'voiceFee',
+      width: 120,
+      search: false,
+      render: (voiceFee) => voiceFee ? `￥${voiceFee}/次` : '-',
+    },
+    {
+      title: '视频咨询费',
+      dataIndex: 'videoFee',
+      width: 120,
+      search: false,
+      render: (videoFee) => videoFee ? `￥${videoFee}/次` : '-',
+    },
+    {
+      title: '在线状态',
+      dataIndex: 'isOnline',
+      width: 100,
+      search: false,
+      render: (isOnline) => (
+        <Badge 
+          status={isOnline ? 'success' : 'default'} 
+          text={isOnline ? '在线' : '离线'} 
+        />
+      ),
+    },
+    {
+      title: '接受咨询',
+      dataIndex: 'acceptConsultation',
+      width: 120,
+      search: false,
+      render: (acceptConsultation) => (
+        <Badge 
+          status={acceptConsultation ? 'processing' : 'error'} 
+          text={acceptConsultation ? '接受中' : '已暂停'} 
+        />
+      ),
     },
     {
       title: '账户状态',
@@ -153,46 +162,44 @@ const PsychologistManagePage: React.FC = () => {
       },
     },
     {
-      title: '实名认证',
-      dataIndex: 'verified',
-      width: 100,
+      title: '个人介绍',
+      dataIndex: 'introduction',
+      width: 200,
       search: false,
-      render: (verified) => (
-        <Badge 
-          status={verified ? 'success' : 'error'} 
-          text={verified ? '已认证' : '未认证'} 
-        />
+      ellipsis: true,
+    },
+    {
+      title: '证书',
+      dataIndex: 'certificates',
+      width: 150,
+      search: false,
+      render: (_, record) => (
+        <>
+          {record.certificates?.map((certificate, index) => (
+            <Tag key={index} color="green" style={{ marginBottom: 4 }}>
+              {certificate}
+            </Tag>
+          ))}
+        </>
       ),
     },
     {
-      title: '邀请码',
-      dataIndex: 'inviteCode',
-      width: 120,
+      title: '口号',
+      dataIndex: 'slogan',
+      width: 150,
       search: false,
-      render: (text) => text ? (
-        <Space>
-          <span>{text}</span>
-          <Tooltip title="复制邀请码">
-            <Button 
-              type="text" 
-              size="small" 
-              icon={<CopyOutlined />}
-              onClick={() => navigator.clipboard.writeText(String(text))}
-            />
-          </Tooltip>
-        </Space>
-      ) : '-',
+      ellipsis: true,
     },
     {
-      title: '申请时间',
+      title: '创建时间',
       dataIndex: 'createdAt',
       width: 180,
       valueType: 'dateTime',
       search: false,
     },
     {
-      title: '最后登录',
-      dataIndex: 'lastLoginAt',
+      title: '更新时间',
+      dataIndex: 'updatedAt',
       width: 180,
       valueType: 'dateTime',
       search: false,
@@ -235,37 +242,13 @@ const PsychologistManagePage: React.FC = () => {
             编辑
           </Button>
         </PermissionWrapper>,
-        record.verificationStatus === 'pending' && (
-          <PermissionWrapper key="approve" permissions={['user:psychologist:verify']}>
-            <Button
-              type="link"
-              size="small"
-              icon={<CheckOutlined />}
-              onClick={() => handleApprove(record)}
-            >
-              通过
-            </Button>
-          </PermissionWrapper>
-        ),
-        record.verificationStatus === 'pending' && (
-          <PermissionWrapper key="reject" permissions={['user:psychologist:verify']}>
-            <Button
-              type="link"
-              size="small"
-              danger
-              icon={<CloseOutlined />}
-              onClick={() => handleReject(record)}
-            >
-              拒绝
-            </Button>
-          </PermissionWrapper>
-        ),
+
       ].filter(Boolean),
     },
   ];
 
   // 获取心理师列表数据
-  const fetchPsychologistList = async (params: any) => {
+  const fetchPsychologistList = async (params: any): Promise<{ data: PsychologistItem[]; success: boolean; total: number; }> => {
     try {
       const response = await UsersApi.getPsychologistList({
         page: params.current ? params.current - 1 : 0,
@@ -278,7 +261,7 @@ const PsychologistManagePage: React.FC = () => {
 
       if (response && response.data) {
         return {
-          data: response.data.records || [],
+          data: response.data.records as unknown as PsychologistItem[] || [],
           success: true,
           total: response.data.total || 0,
         };
@@ -310,15 +293,7 @@ const PsychologistManagePage: React.FC = () => {
     // TODO: 实现编辑心理师逻辑
   };
 
-  const handleApprove = (record: PsychologistItem) => {
-    console.log('通过心理师认证:', record);
-    // TODO: 实现通过心理师认证逻辑
-  };
 
-  const handleReject = (record: PsychologistItem) => {
-    console.log('拒绝心理师认证:', record);
-    // TODO: 实现拒绝心理师认证逻辑
-  };
 
   const handleExport = async () => {
     console.log('导出心理师数据');
@@ -340,7 +315,7 @@ const PsychologistManagePage: React.FC = () => {
           collapsed: false,
         }}
         tableProps={{
-          scroll: { x: 1700 },
+          scroll: { x: 2400 },
         }}
       />
     </PageContainer>

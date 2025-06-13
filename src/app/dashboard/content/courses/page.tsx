@@ -3,7 +3,7 @@
 import React, { useRef, useState } from 'react';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { ActionType, ProColumns } from '@ant-design/pro-components';
-import { ProTable, ModalForm, ProForm, ProFormText, ProFormSelect, ProFormTextArea, ProFormUploadButton } from '@ant-design/pro-components';
+import { ProTable, ModalForm, ProForm, ProFormText, ProFormSelect, ProFormTextArea } from '@ant-design/pro-components';
 import { Button, message, Popconfirm, Space, Tag, Image, Modal } from 'antd';
 import { ContentApi } from '@/api/admin/content';
 import type { CourseResponse, CourseListQuery, CourseCreateRequest } from '@/api/types/content';
@@ -24,6 +24,8 @@ interface CourseItem {
   status: 'draft' | 'published' | 'offline';
   createTime: string;
   updateTime: string;
+  price?: number;
+  originalPrice?: number;
 }
 
 // API数据映射函数
@@ -35,15 +37,13 @@ const mapCourseResponseToItem = (course: CourseResponse): CourseItem => ({
   category: course.category,
   difficulty: course.difficulty,
   duration: course.duration,
-  instructor: course.instructorInfo.name,
+  instructor: course.instructorInfo?.name || '未知讲师',
   studentCount: course.viewCount, // 使用观看次数作为学员数
   rating: course.rating,
   status: course.status === ContentStatus.PUBLISHED ? 'published' : course.status === ContentStatus.DRAFT ? 'draft' : 'offline',
   createTime: course.createdAt,
   updateTime: course.updatedAt,
 });
-
-
 
 // 课程分类选项
 const categoryOptions = [
@@ -69,7 +69,7 @@ const statusOptions = [
 ];
 
 export default function CoursesPage() {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -120,12 +120,12 @@ export default function CoursesPage() {
       key: 'difficulty',
       width: 80,
       render: (_, record) => {
-        const difficultyMap = {
+        const difficultyMap: Record<string, { color: string; text: string }> = {
           beginner: { color: 'green', text: '初级' },
           intermediate: { color: 'blue', text: '中级' },
           advanced: { color: 'red', text: '高级' },
         };
-        const difficulty = difficultyMap[record.difficulty];
+        const difficulty = difficultyMap[record.difficulty] || { color: 'default', text: record.difficulty };
         return <Tag color={difficulty.color}>{difficulty.text}</Tag>;
       },
       valueEnum: {
@@ -171,12 +171,12 @@ export default function CoursesPage() {
       key: 'status',
       width: 100,
       render: (_, record) => {
-        const statusMap = {
+        const statusMap: Record<string, { color: string; text: string }> = {
           draft: { color: 'default', text: '草稿' },
           published: { color: 'green', text: '已发布' },
           offline: { color: 'red', text: '已下线' },
         };
-        const status = statusMap[record.status];
+        const status = statusMap[record.status] || { color: 'default', text: record.status };
         return <Tag color={status.color}>{status.text}</Tag>;
       },
       valueEnum: {
@@ -248,14 +248,15 @@ export default function CoursesPage() {
         category: params.category,
         status: params.status,
       };
-      
+      console.log('查询参数',query);
       const response = await ContentApi.getCourseList(query);
-      const data = response.data.content.map(mapCourseResponseToItem);
-      
+      console.log('响应',response);
+      const data = response.data.records.map(mapCourseResponseToItem);
+      console.log('数据',response.data);
       return {
         data,
         success: true,
-        total: response.data.totalElements,
+        total: response.data.total,
       };
     } catch (error) {
       console.error('获取课程列表失败:', error);
@@ -280,7 +281,7 @@ export default function CoursesPage() {
         category: values.category,
         difficulty: values.difficulty,
         duration: values.duration,
-        coverImage: values.coverImage?.[0]?.response?.url,
+        coverImage: values.coverImage,
         instructorId: 1, // 暂时使用固定值
         tags: [],
       };
@@ -314,7 +315,7 @@ export default function CoursesPage() {
         category: values.category,
         difficulty: values.difficulty,
         duration: values.duration,
-        coverImage: values.coverImage?.[0]?.response?.url,
+        coverImage: values.coverImage,
         tags: [],
       };
       
@@ -456,15 +457,10 @@ export default function CoursesPage() {
             initialValue="draft"
           />
         </ProForm.Group>
-        <ProFormUploadButton
+        <ProFormText
           name="coverImage"
-          label="课程封面"
-          max={1}
-          fieldProps={{
-            name: 'file',
-            listType: 'picture-card',
-          }}
-          action="/api/upload"
+          label="课程封面URL"
+          placeholder="请输入课程封面图片链接"
           extra="支持jpg、png格式，建议尺寸300x200"
         />
       </ModalForm>
@@ -552,15 +548,10 @@ export default function CoursesPage() {
             width="sm"
           />
         </ProForm.Group>
-        <ProFormUploadButton
+        <ProFormText
           name="coverImage"
-          label="课程封面"
-          max={1}
-          fieldProps={{
-            name: 'file',
-            listType: 'picture-card',
-          }}
-          action="/api/upload"
+          label="课程封面URL"
+          placeholder="请输入课程封面图片链接"
           extra="支持jpg、png格式，建议尺寸300x200"
         />
       </ModalForm>
@@ -593,7 +584,7 @@ export default function CoursesPage() {
               <span>时长：{currentRow.duration}分钟</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-              <span>价格：¥{currentRow.price}</span>
+              <span>价格：¥{currentRow.price || '免费'}</span>
               <span>学员数：{currentRow.studentCount}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>

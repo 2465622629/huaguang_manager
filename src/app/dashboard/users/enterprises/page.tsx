@@ -8,22 +8,23 @@ import type { ProColumns } from '@ant-design/pro-components';
 import ListPageTemplate from '@/components/templates/ListPageTemplate';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
-import { UserResponse } from '@/api/types/users';
+import { EnterpriseResponse } from '@/api/types/users';
 
-// 企业用户数据类型 - 基于UserResponse
-interface EnterpriseItem extends UserResponse {
-  companyName?: string;
+// 企业用户数据类型 - 匹配后端API响应结构
+interface EnterpriseItem extends EnterpriseResponse {
+  // 扩展字段用于前端显示
+  avatarUrl?: string;
+  realName?: string;
   contactPerson?: string;
   contactPhone?: string;
   contactEmail?: string;
   businessLicense?: string;
-  industry?: string;
-  scale?: 'small' | 'medium' | 'large';
-  description?: string;
   verified?: boolean;
   verificationStatus?: 'pending' | 'approved' | 'rejected';
   jobCount?: number;
   verifiedAt?: string;
+  inviteCode?: string;
+  lastLoginAt?: string;
 }
 
 const EnterpriseManagePage: React.FC = () => {
@@ -36,14 +37,14 @@ const EnterpriseManagePage: React.FC = () => {
       search: false,
     },
     {
-      title: '头像',
-      dataIndex: 'avatarUrl',
+      title: '企业Logo',
+      dataIndex: 'logoUrl',
       width: 80,
       search: false,
       render: (_, record) => (
         <Avatar 
           size={40}
-          src={record.avatarUrl} 
+          src={record.logoUrl || record.avatarUrl} 
           icon={<UserOutlined />}
         />
       ),
@@ -124,7 +125,7 @@ const EnterpriseManagePage: React.FC = () => {
     },
     {
       title: '企业规模',
-      dataIndex: 'scale',
+      dataIndex: 'companySize',
       width: 100,
       valueEnum: {
         small: { text: '小型', status: 'Default' },
@@ -140,7 +141,7 @@ const EnterpriseManagePage: React.FC = () => {
     },
     {
       title: '认证状态',
-      dataIndex: 'verificationStatus',
+      dataIndex: 'enterpriseStatus',
       width: 120,
       valueEnum: {
         pending: { text: '待审核', status: 'Processing' },
@@ -241,7 +242,7 @@ const EnterpriseManagePage: React.FC = () => {
             编辑
           </Button>
         </PermissionWrapper>,
-        record.verificationStatus === 'pending' && (
+        record.enterpriseStatus === 'pending' && (
           <PermissionWrapper key="approve" permissions={['user:enterprise:verify']}>
             <Button
               type="link"
@@ -253,7 +254,7 @@ const EnterpriseManagePage: React.FC = () => {
             </Button>
           </PermissionWrapper>
         ),
-        record.verificationStatus === 'pending' && (
+        record.enterpriseStatus === 'pending' && (
           <PermissionWrapper key="reject" permissions={['user:enterprise:verify']}>
             <Button
               type="link"
@@ -279,7 +280,8 @@ const EnterpriseManagePage: React.FC = () => {
         keyword: params.keyword,
         status: params.status,
         industry: params.industry,
-        scale: params.scale,
+        companySize: params.companySize,
+        enterpriseStatus: params.enterpriseStatus,
         startDate: params.startDate,
         endDate: params.endDate,
       });

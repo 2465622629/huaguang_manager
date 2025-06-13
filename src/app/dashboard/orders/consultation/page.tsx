@@ -17,10 +17,10 @@ interface OrderItem {
   clientName: string;
   serviceName: string;
   providerName: string;
-  providerType: '律师' | '心理师';
+  providerType: string;
   orderType: '即时咨询' | '预约咨询';
   amount: number;
-  status: '待确认' | '进行中' | '已完成' | '已取消' | '已退款';
+  status: string;
   createTime: string;
   updateTime: string;
   payTime?: string;
@@ -28,21 +28,23 @@ interface OrderItem {
 }
 
 // API数据映射函数
-const mapOrderResponseToItem = (order: ConsultationOrderResponse): OrderItem => ({
-  id: order.id.toString(),
-  orderNumber: order.orderNumber,
-  clientName: order.clientName,
-  serviceName: order.serviceName,
-  providerName: order.providerName,
-  providerType: order.providerType === 'lawyer' ? '律师' : '心理师',
-  orderType: order.orderType === 'instant' ? '即时咨询' : '预约咨询',
-  amount: order.amount,
-  status: order.status,
-  createTime: order.createdAt,
-  updateTime: order.updatedAt,
-  payTime: order.payTime,
-  completeTime: order.completeTime,
-});
+const mapOrderResponseToItem = (order: ConsultationOrderResponse): OrderItem => {
+  return {
+    id: order.id.toString(),
+    orderNumber: order.orderNo,
+    clientName: order.clientName,
+    serviceName: order.serviceTypeDescription || order.serviceType,
+    providerName: order.consultantName,
+    providerType: order.consultantTypeDescription,
+    orderType: '即时咨询', // 根据实际业务逻辑调整
+    amount: order.fee,
+    status: order.statusDescription || order.status,
+    createTime: order.createdAt,
+    updateTime: order.updatedAt,
+    payTime: order.paidAt,
+    completeTime: order.completedAt,
+  };
+};
 
 // 订单状态选项
 const statusOptions = [
@@ -66,7 +68,7 @@ const orderTypeOptions = [
 ];
 
 export default function ConsultationOrdersPage() {
-  const actionRef = useRef<ActionType>();
+  const actionRef = useRef<ActionType>(null);
   const [updateStatusModalOpen, setUpdateStatusModalOpen] = useState(false);
   const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
@@ -115,7 +117,7 @@ export default function ConsultationOrdersPage() {
         lawyer: { text: '律师咨询' },
         psychologist: { text: '心理咨询' },
       },
-      render: (text) => <Tag color={text === '律师' ? 'blue' : 'green'}>{text}</Tag>,
+      render: (text) => <Tag color={String(text).includes('律师') ? 'blue' : 'green'}>{text}</Tag>,
     },
     {
       title: '订单类型',
@@ -143,14 +145,14 @@ export default function ConsultationOrdersPage() {
       key: 'status',
       width: 100,
       render: (_, record) => {
-        const statusMap = {
+        const statusMap: Record<string, { color: string; text: string }> = {
           '待确认': { color: 'default', text: '待确认' },
           '进行中': { color: 'processing', text: '进行中' },
           '已完成': { color: 'success', text: '已完成' },
           '已取消': { color: 'warning', text: '已取消' },
           '已退款': { color: 'error', text: '已退款' },
         };
-        const status = statusMap[record.status];
+        const status = statusMap[record.status] || { color: 'default', text: record.status };
         return <Tag color={status.color}>{status.text}</Tag>;
       },
       valueEnum: {
@@ -199,16 +201,23 @@ export default function ConsultationOrdersPage() {
             </Button>
           )}
           {(record.status === '已完成' || record.status === '进行中') && (
-            <Button
-              type="link"
-              danger
-              onClick={() => {
+            <Popconfirm
+              title="确认退款"
+              description={`确定要对订单 ${record.orderNumber} 进行退款操作吗？`}
+              onConfirm={() => {
                 setCurrentRow(record);
                 setRefundModalOpen(true);
               }}
+              okText="确认"
+              cancelText="取消"
             >
-              退款
-            </Button>
+              <Button
+                type="link"
+                danger
+              >
+                退款
+              </Button>
+            </Popconfirm>
           )}
         </Space>
       ),
@@ -226,18 +235,18 @@ export default function ConsultationOrdersPage() {
         keyword: params.keyword,
         status: params.status,
         serviceType: params.serviceType,
-        orderType: params.orderType,
+        consultantType: params.consultantType,
         startDate: params.startDate,
         endDate: params.endDate,
       };
       
       const response = await OrdersApi.getConsultationOrders(query);
-      const data = response.data.content.map(mapOrderResponseToItem);
+      const data = response.data.records.map(mapOrderResponseToItem);
       
       return {
         data,
         success: true,
-        total: response.data.totalElements,
+        total: response.data.total,
       };
     } catch (error) {
       console.error('获取订单列表失败:', error);
@@ -282,28 +291,73 @@ export default function ConsultationOrdersPage() {
   // 处理退款
   const handleRefund = async (values: any) => {
     try {
-      console.log('处理退款:', values);
+      console.log('开始处理退款:', {
+        订单ID: currentRow?.id,
+        订单号: currentRow?.orderNumber,
+        客户姓名: currentRow?.clientName,
+        订单金额: currentRow?.amount,
+        退款金额: values.refundAmount,
+        退款原因: values.reason
+      });
       
       if (!currentRow) {
-        message.error('缺少订单信息');
+        message.error('缺少订单信息，请重新选择订单');
+        return false;
+      }
+
+      // 验证退款金额
+      if (values.refundAmount > currentRow.amount) {
+        message.error(`退款金额不能超过订单金额 ¥${currentRow.amount}`);
+        return false;
+      }
+
+      if (values.refundAmount <= 0) {
+        message.error('退款金额必须大于0');
         return false;
       }
       
       const refundData: ProcessRefundRequest = {
         orderId: parseInt(currentRow.id),
+        approved: true,
         refundAmount: values.refundAmount,
         reason: values.reason,
       };
       
+      console.log('调用退款API:', refundData);
+      
+      // 显示加载状态
+      const hideLoading = message.loading('正在处理退款，请稍候...', 0);
+      
       await OrdersApi.processRefund(refundData);
-      message.success('退款处理成功');
+      
+      hideLoading();
+      
+      message.success(`退款处理成功！退款金额：¥${values.refundAmount}`);
+      console.log('退款处理成功:', {
+        订单号: currentRow.orderNumber,
+        退款金额: values.refundAmount
+      });
+      
       setRefundModalOpen(false);
       setCurrentRow(undefined);
       actionRef.current?.reload();
       return true;
-    } catch (error) {
-      console.error('处理退款失败:', error);
-      message.error('处理退款失败');
+    } catch (error: any) {
+      console.error('处理退款失败:', {
+        错误信息: error?.message || error,
+        订单号: currentRow?.orderNumber,
+        完整错误: error
+      });
+      
+      // 根据错误类型显示不同的错误信息
+      let errorMessage = '处理退款失败';
+      if (error?.response?.data?.message) {
+        errorMessage = `退款失败：${error.response.data.message}`;
+      } else if (error?.message) {
+        errorMessage = `退款失败：${error.message}`;
+      }
+      
+      message.error(errorMessage);
       return false;
     }
   };
@@ -356,34 +410,65 @@ export default function ConsultationOrdersPage() {
 
       {/* 退款处理模态框 */}
       <ModalForm
-        title="处理退款"
+        title={`处理退款 - 订单号：${currentRow?.orderNumber || ''}`}
         open={refundModalOpen}
         onOpenChange={setRefundModalOpen}
         onFinish={handleRefund}
         modalProps={{
           destroyOnClose: true,
-          width: 500,
+          width: 600,
+        }}
+        initialValues={{
+          refundAmount: currentRow?.amount,
         }}
       >
+        <div style={{ marginBottom: 16, padding: 12, backgroundColor: '#f5f5f5', borderRadius: 4 }}>
+          <div style={{ color: '#666', fontSize: 14 }}>
+            <div>订单信息：{currentRow?.clientName} - {currentRow?.serviceName}</div>
+            <div>订单金额：<span style={{ color: '#f50', fontWeight: 'bold' }}>¥{currentRow?.amount}</span></div>
+          </div>
+        </div>
+        
         <ProFormDigit
           name="refundAmount"
           label="退款金额"
           placeholder="请输入退款金额"
-          rules={[{ required: true, message: '请输入退款金额' }]}
+          rules={[
+            { required: true, message: '请输入退款金额' },
+            {
+              validator: (_: any, value: number) => {
+                if (!value || value <= 0) {
+                  return Promise.reject(new Error('退款金额必须大于0'));
+                }
+                if (currentRow && value > currentRow.amount) {
+                  return Promise.reject(new Error(`退款金额不能超过订单金额 ¥${currentRow.amount}`));
+                }
+                return Promise.resolve();
+              },
+            },
+          ]}
           fieldProps={{
             precision: 2,
-            min: 0,
+            min: 0.01,
             max: currentRow?.amount,
             formatter: (value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ','),
-            parser: (value) => value!.replace(/¥\s?|(,*)/g, ''),
+            parser: (value) => parseFloat(value!.replace(/¥\s?|(,*)/g, '')) || 0,
           }}
+          extra={`最大可退款金额：¥${currentRow?.amount || 0}`}
         />
         <ProFormTextArea
           name="reason"
           label="退款原因"
-          placeholder="请输入退款原因"
-          rules={[{ required: true, message: '请输入退款原因' }]}
-          fieldProps={{ rows: 3 }}
+          placeholder="请详细说明退款原因，此信息将用于退款记录"
+          rules={[
+            { required: true, message: '请输入退款原因' },
+            { min: 10, message: '退款原因至少输入10个字符' },
+          ]}
+          fieldProps={{ 
+            rows: 4,
+            maxLength: 500,
+            showCount: true,
+          }}
         />
       </ModalForm>
 

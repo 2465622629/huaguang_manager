@@ -74,28 +74,28 @@ export default {
           },
         ],
       },
-      {
-        path: '/dashboard/content',
-        name: '内容管理',
-        icon: <BookOutlined />,
-        routes: [
-          {
-            path: '/dashboard/content/courses',
-            name: '课程管理',
-            component: './dashboard/content/courses',
-          },
-          {
-            path: '/dashboard/content/legal-templates',
-            name: '法律模板',
-            component: './dashboard/content/legal-templates',
-          },
-          {
-            path: '/dashboard/content/psych-tests',
-            name: '心理测试',
-            component: './dashboard/content/psych-tests',
-          },
-        ],
-      },
+      // {
+      //   path: '/dashboard/content',
+      //   name: '内容管理',
+      //   icon: <BookOutlined />,
+      //   routes: [
+      //     {
+      //       path: '/dashboard/content/courses',
+      //       name: '课程管理',
+      //       component: './dashboard/content/courses',
+      //     },
+      //     {
+      //       path: '/dashboard/content/legal-templates',
+      //       name: '法律模板',
+      //       component: './dashboard/content/legal-templates',
+      //     },
+      //     {
+      //       path: '/dashboard/content/psych-tests',
+      //       name: '心理测试',
+      //       component: './dashboard/content/psych-tests',
+      //     },
+      //   ],
+      // },
       {
         path: '/dashboard/orders',
         name: '订单管理',

@@ -10,15 +10,35 @@ import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
 import { UserResponse } from '@/api/types/users';
 
-// 律师数据类型 - 基于UserResponse
-interface LawyerItem extends UserResponse {
-  licenseNumber?: string;
-  lawFirm?: string;
-  specialties?: string[];
-  experience?: number;
+// 律师数据类型 - 匹配后端律师数据结构
+interface LawyerItem {
+  id: number;
+  userId: number;
+  username: string;
+  realName: string;
+  email: string;
+  phone: string;
+  status: string;
+  licenseNumber: string;
+  specialties: string[];
+  experienceYears: number;
+  successRate: number;
+  caseCount: number;
+  consultationFee: number;
+  voiceFee: number;
+  videoFee: number;
+  isOnline: boolean;
+  acceptConsultation: boolean;
+  introduction: string;
+  certificates: string[];
+  createdAt: string;
+  updatedAt: string;
+  // 兼容前端显示的额外字段
+  avatarUrl?: string;
+  inviteCode?: string;
+  lastLoginAt?: string;
   verified?: boolean;
   verificationStatus?: 'pending' | 'approved' | 'rejected';
-  verifiedAt?: string;
 }
 
 const LawyerManagePage: React.FC = () => {
@@ -94,10 +114,55 @@ const LawyerManagePage: React.FC = () => {
     },
     {
       title: '执业年限',
-      dataIndex: 'experience',
+      dataIndex: 'experienceYears',
       width: 100,
       search: false,
-      render: (experience) => experience ? `${experience}年` : '-',
+      render: (experienceYears) => experienceYears ? `${experienceYears}年` : '-',
+    },
+    {
+      title: '成功率',
+      dataIndex: 'successRate',
+      width: 100,
+      search: false,
+      render: (_, record) => record.successRate ? `${(Number(record.successRate) * 100).toFixed(1)}%` : '-',
+    },
+    {
+      title: '案件数量',
+      dataIndex: 'caseCount',
+      width: 100,
+      search: false,
+      render: (caseCount) => caseCount ? `${caseCount}件` : '0件',
+    },
+    {
+      title: '在线状态',
+      dataIndex: 'isOnline',
+      width: 100,
+      search: false,
+      render: (isOnline) => (
+        <Badge 
+          status={isOnline ? 'success' : 'default'} 
+          text={isOnline ? '在线' : '离线'} 
+        />
+      ),
+    },
+    {
+      title: '接受咨询',
+      dataIndex: 'acceptConsultation',
+      width: 120,
+      search: false,
+      render: (acceptConsultation) => (
+        <Badge 
+          status={acceptConsultation ? 'processing' : 'error'} 
+          text={acceptConsultation ? '接受中' : '已暂停'} 
+        />
+      ),
+    },
+    {
+      title: '文字咨询费',
+      dataIndex: 'consultationFee',
+      width: 120,
+      search: false,
+      render: (consultationFee) => consultationFee ? `￥${consultationFee}/次` : '-',
     },
     {
       title: '认证状态',
@@ -232,7 +297,7 @@ const LawyerManagePage: React.FC = () => {
   ];
 
   // 获取律师列表数据
-  const fetchLawyerList = async (params: any) => {
+  const fetchLawyerList = async (params: any): Promise<{ data: LawyerItem[]; success: boolean; total: number; }> => {
     try {
       const response = await UsersApi.getLawyerList({
         page: params.current ? params.current - 1 : 0,
@@ -245,7 +310,7 @@ const LawyerManagePage: React.FC = () => {
 
       if (response && response.data) {
         return {
-          data: response.data.records || [],
+          data: response.data.records as unknown as LawyerItem[] || [],
           success: true,
           total: response.data.total || 0,
         };
@@ -307,7 +372,7 @@ const LawyerManagePage: React.FC = () => {
           collapsed: false,
         }}
         tableProps={{
-          scroll: { x: 1600 },
+          scroll: { x: 2200 },
         }}
       />
     </PageContainer>

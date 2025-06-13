@@ -193,12 +193,12 @@ export default function AdminListPage() {
       const response = await AdministratorsApi.getAdministratorList(query);
       
       // 映射数据格式
-      const data = response.data.content.map(mapAdminResponseToItem);
+      const data = response.data.records.map(mapAdminResponseToItem);
       
       return {
         data,
         success: true,
-        total: response.data.totalElements,
+        total: response.data.total,
       };
     } catch (error) {
       console.error('获取管理员列表失败:', error);

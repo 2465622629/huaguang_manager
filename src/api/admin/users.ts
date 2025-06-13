@@ -5,7 +5,9 @@ import type {
   UserListQuery,
   UserResponse,
   UserDetailResponse,
-  UpdateUserStatusRequest
+  UpdateUserStatusRequest,
+  EnterpriseListQuery,
+  EnterpriseResponse
 } from '../types';
 
 /**
@@ -83,7 +85,7 @@ export class UsersApi {
   /**
    * 获取企业列表
    */
-  static async getEnterpriseList(params: UserListQuery): Promise<ApiResponse<PageResponse<UserResponse>>> {
+  static async getEnterpriseList(params: EnterpriseListQuery): Promise<ApiResponse<PageResponse<EnterpriseResponse>>> {
     return request.get('/admin/users/enterprises', { params });
   }
 

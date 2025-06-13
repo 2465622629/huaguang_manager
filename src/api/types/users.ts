@@ -8,6 +8,16 @@ export interface UserListQuery extends BasePageQuery {
   endDate?: string;
 }
 
+// 企业用户查询参数
+export interface EnterpriseListQuery extends BasePageQuery {
+  status?: UserStatus;
+  industry?: string;
+  companySize?: string;
+  enterpriseStatus?: string;
+  startDate?: string;
+  endDate?: string;
+}
+
 // 用户响应数据 - 匹配后端AdminUserResponse
 export interface UserResponse extends BaseUser {
   userType: UserType;
@@ -51,6 +61,28 @@ export interface UserDetailResponse extends UserResponse {
     phoneVerified: boolean;
     idCardVerified: boolean;
   };
+}
+
+// 企业用户响应数据 - 匹配后端API响应结构
+export interface EnterpriseResponse {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  phone: string;
+  status: string;
+  companyName: string;
+  companyType: string;
+  companySize: string;
+  industry: string;
+  description: string;
+  address: string;
+  website: string;
+  logoUrl: string;
+  benefits: string[];
+  enterpriseStatus: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // 用户状态更新请求
