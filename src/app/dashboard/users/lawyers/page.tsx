@@ -2,28 +2,22 @@
 
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Tag, Avatar, Badge } from 'antd';
-import { EyeOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Button, Tag, Badge, Avatar, Space, Tooltip } from 'antd';
+import { EyeOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined, CopyOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import ListPageTemplate from '@/components/templates/ListPageTemplate';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
+import { UserResponse } from '@/api/types/users';
 
-// 律师数据类型
-interface LawyerItem {
-  id: number;
-  username: string;
-  realName: string;
-  email?: string;
-  phone: string;
-  avatar?: string;
-  licenseNumber: string;
-  lawFirm: string;
-  specialties: string[];
-  experience: number;
-  verified: boolean;
-  status: 'pending' | 'approved' | 'rejected';
-  createdAt: string;
+// 律师数据类型 - 基于UserResponse
+interface LawyerItem extends UserResponse {
+  licenseNumber?: string;
+  lawFirm?: string;
+  specialties?: string[];
+  experience?: number;
+  verified?: boolean;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
   verifiedAt?: string;
 }
 
@@ -38,13 +32,15 @@ const LawyerManagePage: React.FC = () => {
     },
     {
       title: '头像',
-      dataIndex: 'avatar',
+      dataIndex: 'avatarUrl',
       width: 80,
       search: false,
       render: (_, record) => (
-        <Avatar src={record.avatar} size="small">
-          {record.realName?.charAt(0)}
-        </Avatar>
+        <Avatar 
+          size={40}
+          src={record.avatarUrl} 
+          icon={<UserOutlined />}
+        />
       ),
     },
     {
@@ -56,6 +52,12 @@ const LawyerManagePage: React.FC = () => {
       title: '用户名',
       dataIndex: 'username',
       width: 120,
+    },
+    {
+      title: '邮箱',
+      dataIndex: 'email',
+      width: 180,
+      copyable: true,
     },
     {
       title: '手机号',
@@ -95,16 +97,26 @@ const LawyerManagePage: React.FC = () => {
       dataIndex: 'experience',
       width: 100,
       search: false,
-      render: (experience) => `${experience}年`,
+      render: (experience) => experience ? `${experience}年` : '-',
     },
     {
       title: '认证状态',
-      dataIndex: 'status',
+      dataIndex: 'verificationStatus',
       width: 120,
       valueEnum: {
         pending: { text: '待审核', status: 'Processing' },
         approved: { text: '已通过', status: 'Success' },
         rejected: { text: '已拒绝', status: 'Error' },
+      },
+    },
+    {
+      title: '账户状态',
+      dataIndex: 'status',
+      width: 100,
+      valueEnum: {
+        active: { text: '正常', status: 'Success' },
+        inactive: { text: '未激活', status: 'Default' },
+        banned: { text: '已封禁', status: 'Error' },
       },
     },
     {
@@ -120,6 +132,25 @@ const LawyerManagePage: React.FC = () => {
       ),
     },
     {
+      title: '邀请码',
+      dataIndex: 'inviteCode',
+      width: 120,
+      search: false,
+      render: (text) => text ? (
+        <Space>
+          <span>{text}</span>
+          <Tooltip title="复制邀请码">
+            <Button 
+              type="text" 
+              size="small" 
+              icon={<CopyOutlined />}
+              onClick={() => navigator.clipboard.writeText(String(text))}
+            />
+          </Tooltip>
+        </Space>
+      ) : '-',
+    },
+    {
       title: '申请时间',
       dataIndex: 'createdAt',
       width: 180,
@@ -127,9 +158,28 @@ const LawyerManagePage: React.FC = () => {
       search: false,
     },
     {
+      title: '最后登录',
+      dataIndex: 'lastLoginAt',
+      width: 180,
+      valueType: 'dateTime',
+      search: false,
+    },
+    {
+      title: '注册时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateRange',
+      hideInTable: true,
+      search: {
+        transform: (value: any) => ({
+          startDate: value?.[0],
+          endDate: value?.[1],
+        }),
+      },
+    },
+    {
       title: '操作',
       valueType: 'option',
-      width: 200,
+      width: 220,
       fixed: 'right',
       render: (_, record) => [
         <PermissionWrapper key="view" permissions={['user:lawyer:read']}>
@@ -152,7 +202,7 @@ const LawyerManagePage: React.FC = () => {
             编辑
           </Button>
         </PermissionWrapper>,
-        record.status === 'pending' && (
+        record.verificationStatus === 'pending' && (
           <PermissionWrapper key="approve" permissions={['user:lawyer:verify']}>
             <Button
               type="link"
@@ -164,7 +214,7 @@ const LawyerManagePage: React.FC = () => {
             </Button>
           </PermissionWrapper>
         ),
-        record.status === 'pending' && (
+        record.verificationStatus === 'pending' && (
           <PermissionWrapper key="reject" permissions={['user:lawyer:verify']}>
             <Button
               type="link"
@@ -185,17 +235,19 @@ const LawyerManagePage: React.FC = () => {
   const fetchLawyerList = async (params: any) => {
     try {
       const response = await UsersApi.getLawyerList({
-        page: params.current - 1,
-        size: params.pageSize,
+        page: params.current ? params.current - 1 : 0,
+        size: params.pageSize || 10,
         keyword: params.keyword,
         status: params.status,
+        startDate: params.startDate,
+        endDate: params.endDate,
       });
 
-      if (response.success) {
+      if (response && response.data) {
         return {
-          data: response.data.content,
+          data: response.data.records || [],
           success: true,
-          total: response.data.totalElements,
+          total: response.data.total || 0,
         };
       } else {
         return {
@@ -205,6 +257,7 @@ const LawyerManagePage: React.FC = () => {
         };
       }
     } catch (error) {
+      console.error('获取律师列表失败:', error);
       return {
         data: [],
         success: false,
@@ -254,7 +307,7 @@ const LawyerManagePage: React.FC = () => {
           collapsed: false,
         }}
         tableProps={{
-          scroll: { x: 1400 },
+          scroll: { x: 1600 },
         }}
       />
     </PageContainer>

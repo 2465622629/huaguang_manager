@@ -2,31 +2,27 @@
 
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Tag, Badge, Image } from 'antd';
-import { EyeOutlined, EditOutlined, CheckOutlined, CloseOutlined } from '@ant-design/icons';
+import { Button, Tag, Badge, Avatar, Space, Tooltip } from 'antd';
+import { EyeOutlined, EditOutlined, CheckOutlined, CloseOutlined, UserOutlined, CopyOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import ListPageTemplate from '@/components/templates/ListPageTemplate';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
+import { UserResponse } from '@/api/types/users';
 
-// 企业用户数据类型
-interface EnterpriseItem {
-  id: number;
-  username: string;
-  companyName: string;
-  contactPerson: string;
-  contactPhone: string;
+// 企业用户数据类型 - 基于UserResponse
+interface EnterpriseItem extends UserResponse {
+  companyName?: string;
+  contactPerson?: string;
+  contactPhone?: string;
   contactEmail?: string;
-  businessLicense: string;
-  logo?: string;
-  address: string;
-  industry: string;
-  scale: 'small' | 'medium' | 'large';
+  businessLicense?: string;
+  industry?: string;
+  scale?: 'small' | 'medium' | 'large';
   description?: string;
-  verified: boolean;
-  status: 'pending' | 'approved' | 'rejected';
-  jobCount: number;
-  createdAt: string;
+  verified?: boolean;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
+  jobCount?: number;
   verifiedAt?: string;
 }
 
@@ -40,24 +36,16 @@ const EnterpriseManagePage: React.FC = () => {
       search: false,
     },
     {
-      title: '企业LOGO',
-      dataIndex: 'logo',
-      width: 100,
+      title: '头像',
+      dataIndex: 'avatarUrl',
+      width: 80,
       search: false,
       render: (_, record) => (
-        <div style={{ width: 60, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#f5f5f5', borderRadius: 4 }}>
-          {record.logo ? (
-            <Image 
-              src={record.logo} 
-              width={60}
-              height={40}
-              style={{ objectFit: 'contain' }}
-              preview={false}
-            />
-          ) : (
-            <span style={{ fontSize: 12, color: '#999' }}>无LOGO</span>
-          )}
-        </div>
+        <Avatar 
+          size={40}
+          src={record.avatarUrl} 
+          icon={<UserOutlined />}
+        />
       ),
     },
     {
@@ -72,9 +60,20 @@ const EnterpriseManagePage: React.FC = () => {
       width: 120,
     },
     {
+      title: '真实姓名',
+      dataIndex: 'realName',
+      width: 100,
+    },
+    {
       title: '联系人',
       dataIndex: 'contactPerson',
       width: 100,
+    },
+    {
+      title: '手机号',
+      dataIndex: 'phone',
+      width: 130,
+      copyable: true,
     },
     {
       title: '联系电话',
@@ -84,6 +83,13 @@ const EnterpriseManagePage: React.FC = () => {
     },
     {
       title: '邮箱',
+      dataIndex: 'email',
+      width: 180,
+      copyable: true,
+      ellipsis: true,
+    },
+    {
+      title: '联系邮箱',
       dataIndex: 'contactEmail',
       width: 180,
       copyable: true,
@@ -94,6 +100,13 @@ const EnterpriseManagePage: React.FC = () => {
       dataIndex: 'businessLicense',
       width: 180,
       copyable: true,
+    },
+    {
+      title: '地址',
+      dataIndex: 'address',
+      width: 150,
+      search: false,
+      ellipsis: true,
     },
     {
       title: '所属行业',
@@ -127,12 +140,22 @@ const EnterpriseManagePage: React.FC = () => {
     },
     {
       title: '认证状态',
-      dataIndex: 'status',
+      dataIndex: 'verificationStatus',
       width: 120,
       valueEnum: {
         pending: { text: '待审核', status: 'Processing' },
         approved: { text: '已通过', status: 'Success' },
         rejected: { text: '已拒绝', status: 'Error' },
+      },
+    },
+    {
+      title: '账户状态',
+      dataIndex: 'status',
+      width: 100,
+      valueEnum: {
+        active: { text: '正常', status: 'Success' },
+        inactive: { text: '未激活', status: 'Default' },
+        banned: { text: '已封禁', status: 'Error' },
       },
     },
     {
@@ -148,6 +171,25 @@ const EnterpriseManagePage: React.FC = () => {
       ),
     },
     {
+      title: '邀请码',
+      dataIndex: 'inviteCode',
+      width: 120,
+      search: false,
+      render: (text) => text ? (
+        <Space>
+          <span>{text}</span>
+          <Tooltip title="复制邀请码">
+            <Button 
+              type="text" 
+              size="small" 
+              icon={<CopyOutlined />}
+              onClick={() => navigator.clipboard.writeText(String(text))}
+            />
+          </Tooltip>
+        </Space>
+      ) : '-',
+    },
+    {
       title: '注册时间',
       dataIndex: 'createdAt',
       width: 180,
@@ -155,9 +197,28 @@ const EnterpriseManagePage: React.FC = () => {
       search: false,
     },
     {
+      title: '最后登录',
+      dataIndex: 'lastLoginAt',
+      width: 180,
+      valueType: 'dateTime',
+      search: false,
+    },
+    {
+      title: '注册时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateRange',
+      hideInTable: true,
+      search: {
+        transform: (value: any) => ({
+          startDate: value?.[0],
+          endDate: value?.[1],
+        }),
+      },
+    },
+    {
       title: '操作',
       valueType: 'option',
-      width: 200,
+      width: 220,
       fixed: 'right',
       render: (_, record) => [
         <PermissionWrapper key="view" permissions={['user:enterprise:read']}>
@@ -180,7 +241,7 @@ const EnterpriseManagePage: React.FC = () => {
             编辑
           </Button>
         </PermissionWrapper>,
-        record.status === 'pending' && (
+        record.verificationStatus === 'pending' && (
           <PermissionWrapper key="approve" permissions={['user:enterprise:verify']}>
             <Button
               type="link"
@@ -192,7 +253,7 @@ const EnterpriseManagePage: React.FC = () => {
             </Button>
           </PermissionWrapper>
         ),
-        record.status === 'pending' && (
+        record.verificationStatus === 'pending' && (
           <PermissionWrapper key="reject" permissions={['user:enterprise:verify']}>
             <Button
               type="link"
@@ -213,19 +274,21 @@ const EnterpriseManagePage: React.FC = () => {
   const fetchEnterpriseList = async (params: any) => {
     try {
       const response = await UsersApi.getEnterpriseList({
-        page: params.current - 1,
-        size: params.pageSize,
+        page: params.current ? params.current - 1 : 0,
+        size: params.pageSize || 10,
         keyword: params.keyword,
         status: params.status,
         industry: params.industry,
         scale: params.scale,
+        startDate: params.startDate,
+        endDate: params.endDate,
       });
 
-      if (response.success) {
+      if (response && response.data) {
         return {
-          data: response.data.content,
+          data: response.data.records || [],
           success: true,
-          total: response.data.totalElements,
+          total: response.data.total || 0,
         };
       } else {
         return {
@@ -235,6 +298,7 @@ const EnterpriseManagePage: React.FC = () => {
         };
       }
     } catch (error) {
+      console.error('获取企业列表失败:', error);
       return {
         data: [],
         success: false,
@@ -284,7 +348,7 @@ const EnterpriseManagePage: React.FC = () => {
           collapsed: false,
         }}
         tableProps={{
-          scroll: { x: 1600 },
+          scroll: { x: 1800 },
         }}
       />
     </PageContainer>

@@ -2,24 +2,40 @@
 
 import React from 'react';
 import { PageContainer } from '@ant-design/pro-components';
-import { Button, Tag, Avatar, Space } from 'antd';
-import { EyeOutlined, EditOutlined, DeleteOutlined, UserOutlined } from '@ant-design/icons';
+import { Button, Tag, Space, Avatar, Tooltip } from 'antd';
+import { EyeOutlined, EditOutlined, DeleteOutlined, UserOutlined, CopyOutlined } from '@ant-design/icons';
 import type { ProColumns } from '@ant-design/pro-components';
 import ListPageTemplate from '@/components/templates/ListPageTemplate';
 import PermissionWrapper from '@/components/PermissionWrapper';
 import { UsersApi } from '@/api/admin/users';
+import { UserType, UserStatus, Gender } from '@/api/types/common';
 
-// 用户数据类型
+// 用户数据类型 - 匹配后端AdminUserResponse
 interface UserItem {
   id: number;
   username: string;
   realName?: string;
   email?: string;
   phone?: string;
-  avatar?: string;
-  status: 'active' | 'inactive' | 'banned';
-  userType: 'user' | 'lawyer' | 'psychologist' | 'enterprise';
+  status: UserStatus;
+  userType: UserType;
+  avatarUrl?: string;
+  nickname?: string;
+  gender?: Gender;
+  birthDate?: string;
+  bio?: string;
+  address?: string;
+  wechat?: string;
+  qq?: string;
+  educationLevel?: string;
+  workExperience?: string;
+  skills?: string;
+  parentContact?: string;
+  memberId?: string;
+  inviteCode?: string;
+  invitedBy?: number;
   createdAt: string;
+  updatedAt: string;
   lastLoginAt?: string;
 }
 
@@ -34,14 +50,14 @@ const UserListPage: React.FC = () => {
     },
     {
       title: '头像',
-      dataIndex: 'avatar',
+      dataIndex: 'avatarUrl',
       width: 80,
       search: false,
       render: (_, record) => (
         <Avatar 
-          src={record.avatar} 
+          size={40}
+          src={record.avatarUrl} 
           icon={<UserOutlined />}
-          size="small"
         />
       ),
     },
@@ -57,6 +73,12 @@ const UserListPage: React.FC = () => {
       width: 100,
     },
     {
+      title: '昵称',
+      dataIndex: 'nickname',
+      width: 100,
+      search: false,
+    },
+    {
       title: '邮箱',
       dataIndex: 'email',
       width: 180,
@@ -67,6 +89,41 @@ const UserListPage: React.FC = () => {
       dataIndex: 'phone',
       width: 130,
       copyable: true,
+    },
+    {
+      title: '微信号',
+      dataIndex: 'wechat',
+      width: 120,
+      search: false,
+      copyable: true,
+      render: (text) => text || '-',
+    },
+    {
+      title: 'QQ号',
+      dataIndex: 'qq',
+      width: 120,
+      search: false,
+      copyable: true,
+      render: (text) => text || '-',
+    },
+    {
+      title: '性别',
+      dataIndex: 'gender',
+      width: 80,
+      search: false,
+      valueEnum: {
+        male: { text: '男', status: 'Default' },
+        female: { text: '女', status: 'Success' },
+        other: { text: '其他', status: 'Processing' },
+      },
+    },
+    {
+      title: '生日',
+      dataIndex: 'birthDate',
+      width: 120,
+      search: false,
+      valueType: 'date',
+      render: (text) => text || '-',
     },
     {
       title: '用户类型',
@@ -90,6 +147,46 @@ const UserListPage: React.FC = () => {
       },
     },
     {
+      title: '邀请码',
+      dataIndex: 'inviteCode',
+      width: 120,
+      search: false,
+      render: (text) => text ? (
+        <Space>
+          <span>{text}</span>
+          <Tooltip title="复制邀请码">
+            <Button 
+              type="text" 
+              size="small" 
+              icon={<CopyOutlined />}
+              onClick={() => navigator.clipboard.writeText(String(text))}
+            />
+          </Tooltip>
+        </Space>
+      ) : '-',
+    },
+    {
+      title: '会员ID',
+      dataIndex: 'memberId',
+      width: 120,
+      search: false,
+      render: (text) => text || '-',
+    },
+    {
+      title: '邀请人ID',
+      dataIndex: 'invitedBy',
+      width: 100,
+      search: false,
+      render: (text) => text || '-',
+    },
+    {
+      title: '地址',
+      dataIndex: 'address',
+      width: 150,
+      search: false,
+      ellipsis: true,
+    },
+    {
       title: '注册时间',
       dataIndex: 'createdAt',
       width: 180,
@@ -104,9 +201,21 @@ const UserListPage: React.FC = () => {
       search: false,
     },
     {
+      title: '注册时间',
+      dataIndex: 'createdAt',
+      valueType: 'dateRange',
+      hideInTable: true,
+      search: {
+        transform: (value: any) => ({
+          startDate: value?.[0],
+          endDate: value?.[1],
+        }),
+      },
+    },
+    {
       title: '操作',
       valueType: 'option',
-      width: 150,
+      width: 180,
       fixed: 'right',
       render: (_, record) => [
         <PermissionWrapper key="view" permissions={['user:read']}>
@@ -148,18 +257,20 @@ const UserListPage: React.FC = () => {
   const fetchUserList = async (params: any) => {
     try {
       const response = await UsersApi.getUserList({
-        page: params.current - 1,
-        size: params.pageSize,
+        page: params.current ? params.current - 1 : 0,
+        size: params.pageSize || 10,
         keyword: params.keyword,
         status: params.status,
         userType: params.userType,
+        startDate: params.startDate,
+        endDate: params.endDate,
       });
 
-      if (response.success) {
+      if (response && response.data) {
         return {
-          data: response.data.content,
+          data: response.data.records || [],
           success: true,
-          total: response.data.totalElements,
+          total: response.data.total || 0,
         };
       } else {
         return {
@@ -169,6 +280,7 @@ const UserListPage: React.FC = () => {
         };
       }
     } catch (error) {
+      console.error('获取用户列表失败:', error);
       return {
         data: [],
         success: false,
@@ -229,7 +341,7 @@ const UserListPage: React.FC = () => {
           collapsed: false,
         }}
         tableProps={{
-          scroll: { x: 1200 },
+          scroll: { x: 2000 },
         }}
       />
     </PageContainer>
