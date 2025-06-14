@@ -17,19 +17,18 @@ export default {
     path: '/',
     routes: [
       // 保留原有菜单项以保证兼容性
-      {
-        path: '/dashboard/career-aid',
-        name: '就业援助',
-        icon: <CrownFilled />,
-        component: './dashboard/career-aid',
-      },
-      {
-        path: '/dashboard/help-fund',
-        name: '帮扶资金',
-        icon: <TabletFilled />,
-        component: './dashboard/help-fund',
-      },
-      // 新增菜单项
+      // {
+      //   path: '/dashboard/career-aid',
+      //   name: '就业援助',
+      //   icon: <CrownFilled />,
+      //   component: './dashboard/career-aid',
+      // },
+      // {
+      //   path: '/dashboard/help-fund',
+      //   name: '帮扶资金',
+      //   icon: <TabletFilled />,
+      //   component: './dashboard/help-fund',
+      // },
       {
         path: '/dashboard/users',
         name: '用户管理',
@@ -110,6 +109,11 @@ export default {
             path: '/dashboard/orders/withdrawal',
             name: '提现申请',
             component: './dashboard/orders/withdrawal',
+          },
+          {
+            path: '/dashboard/orders/commission',
+            name: '佣金记录',
+            component: './dashboard/orders/commission',
           },
         ],
       },

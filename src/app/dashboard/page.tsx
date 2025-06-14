@@ -7,7 +7,7 @@ export default function DashboardPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push('/dashboard/career-aid');
+    router.push('/dashboard/users/list');
   }, [router]);
 
   return null;

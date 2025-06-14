@@ -47,7 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           menuItemRender={(item, dom) => (
             <div
               onClick={() => {
-                router.push(item.path || '/dashboard/career-aid');
+                router.push(item.path || '/dashboard/users/list');
               }}
             >
               {dom}

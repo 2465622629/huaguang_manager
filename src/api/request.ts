@@ -63,7 +63,7 @@ request.interceptors.response.use(
           localStorage.removeItem('admin_access_token');
           localStorage.removeItem('admin_refresh_token');
           localStorage.removeItem('admin_info');
-          window.location.href = '/login';
+          window.location.href = '/';
           break;
         case 403:
           errorMessage = '权限不足';
