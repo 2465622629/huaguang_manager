@@ -73,25 +73,28 @@ export interface AdminCreditRepairApplicationResponse {
 export interface AdminLegalDocumentResponse {
   id: number;
   userId: number;
-  userName: string;
-  userPhone: string;
+  username: string;
+  realName: string;
   documentType: string;
-  documentTypeText: string;
   title: string;
   content: string;
-  attachments: string[];
   status: ReviewStatus;
-  statusText: string;
+  statusDescription: string;
   reviewerId?: number;
   reviewerName?: string;
-  reviewTime?: string;
   reviewComment?: string;
-  createdTime: string;
-  updatedTime: string;
+  createdAt: string;
+  updatedAt: string;
+  // 保留一些可能的扩展字段
+  userPhone?: string;
+  documentTypeText?: string;
+  attachments?: string[];
+  statusText?: string;
+  reviewTime?: string;
   lawyerId?: number;
   lawyerName?: string;
-  urgencyLevel: 'low' | 'medium' | 'high' | 'urgent';
-  urgencyLevelText: string;
+  urgencyLevel?: 'low' | 'medium' | 'high' | 'urgent';
+  urgencyLevelText?: string;
 }
 
 // 在线管理员信息

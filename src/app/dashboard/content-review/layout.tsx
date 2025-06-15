@@ -43,6 +43,19 @@ export default function ContentReviewLayout({ children }: ContentReviewLayoutPro
     },
   ];
 
+  // 确保只选中当前精确路径
+  const getSelectedKeys = () => {
+    // 如果是精确匹配的路径，返回该路径
+    if (menuItems.some(item => item.key === pathname)) {
+      return [pathname];
+    }
+    // 如果是子路径，找到最匹配的父路径
+    const matchedItem = menuItems.find(item => 
+      pathname.startsWith(item.key) && item.key !== '/dashboard/content-review'
+    );
+    return matchedItem ? [matchedItem.key] : [pathname];
+  };
+
   const handleMenuClick = ({ key }: { key: string }) => {
     router.push(key);
   };
@@ -64,7 +77,7 @@ export default function ContentReviewLayout({ children }: ContentReviewLayoutPro
         </div>
         <Menu
           mode="inline"
-          selectedKeys={[pathname]}
+          selectedKeys={getSelectedKeys()}
           items={menuItems}
           onClick={handleMenuClick}
           style={{ border: 'none' }}
