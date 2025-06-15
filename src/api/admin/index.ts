@@ -19,5 +19,5 @@ export * from './content';
 // 导出订单管理API
 export * from './orders';
 
-// 导出内容审核API（后续可添加）
-// export * from './content-review'; 
+// 导出内容审核API
+export * from './content-review'; 

@@ -12,6 +12,7 @@ import type {
   AssignRoleRequest,
   ResetPasswordRequest
 } from '../types/administrators';
+import type { OnlineAdminInfo } from '../types/content-review';
 
 /**
  * 管理员管理API
@@ -98,6 +99,13 @@ export class AdministratorsApi {
   }>> {
     return request.get('/admin/administrators/statistics');
   }
+
+  /**
+   * 获取在线管理员列表
+   */
+  static async getOnlineAdministrators(): Promise<ApiResponse<OnlineAdminInfo[]>> {
+    return request.get('/admin/administrators/online');
+  }
 }
 
 // 为方便使用，也导出函数式API
@@ -111,5 +119,6 @@ export const {
   resetPassword,
   forceLogout,
   getLoginRecords,
-  getAdministratorStatistics
+  getAdministratorStatistics,
+  getOnlineAdministrators
 } = AdministratorsApi; 

@@ -71,6 +71,38 @@ export default {
             name: '角色权限',
             component: './dashboard/admins/roles',
           },
+          {
+            path: '/dashboard/admins/online',
+            name: '在线管理员',
+            component: './dashboard/admins/online',
+          },
+        ],
+      },
+      {
+        path: '/dashboard/content-review',
+        name: '内容审核',
+        icon: <AuditOutlined />,
+        routes: [
+          {
+            path: '/dashboard/content-review',
+            name: '审核概览',
+            component: './dashboard/content-review',
+          },
+          {
+            path: '/dashboard/content-review/assistance',
+            name: '帮扶申请审核',
+            component: './dashboard/content-review/assistance',
+          },
+          {
+            path: '/dashboard/content-review/credit-repair',
+            name: '信用修复审核',
+            component: './dashboard/content-review/credit-repair',
+          },
+          {
+            path: '/dashboard/content-review/legal-documents',
+            name: '法律文书历史',
+            component: './dashboard/content-review/legal-documents',
+          },
         ],
       },
       // {
